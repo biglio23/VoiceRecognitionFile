@@ -10,6 +10,7 @@ import android.widget.TextView;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.MappedByteBuffer;
 import java.nio.channels.FileChannel;
@@ -26,13 +27,17 @@ import retrofit.mime.TypedInput;
 
 public class MainActivity extends Activity {
 
-    String language = "it_it";
+    final String language = "it_it";
 
-    String api_key = "AIzaSyBgnC5fljMTmCFeilkgLsOKBvvnx6CBS0M";
+    final String api_key = "AIzaSyBgnC5fljMTmCFeilkgLsOKBvvnx6CBS0M";
 
-    String path = Environment.getExternalStorageDirectory() + "/VoiceRecognitionAudio/";
+    final String path = Environment.getExternalStorageDirectory() + "/VoiceRecognitionAudio/";
 
     int sampleRate = 44100;
+
+    File outputFile;
+    List<File> files;
+    int current;
 
     TextView txtView;
     ProgressDialog pd;
@@ -46,22 +51,22 @@ public class MainActivity extends Activity {
     }
 
     public void startClick(View view) {
-        pd = DialogUtil.createProgressDialog(this, "CARICAMENTO");
-        //getTranscription();
-        List<File> files = getListFiles(new File(path));
-        for (File f : files) {
-            Log.d("LINO", f.getName());
+        files = getListFiles(new File(path));
+        current = 0;
+        outputFile = new File(path + "results.txt");
+        if (outputFile.exists() && outputFile.delete()) {
+            Log.d("LINO", "Vecchio file cancellato");
         }
+        getTranscription(files.get(current));
     }
 
-    public void getTranscription(String filename) {
-
-        File myfil = new File(filename);
-        if (!myfil.canRead())
+    public void getTranscription(final File audioFile) {
+        pd = DialogUtil.createProgressDialog(this, "Riconoscimento #" + current);
+        if (!audioFile.canRead())
             Log.d("ParseStarter", "FATAL no read access");
 
         try {
-            FileInputStream fis = new FileInputStream(myfil);
+            final FileInputStream fis = new FileInputStream(audioFile);
             FileChannel fc = fis.getChannel();
             int sz = (int) fc.size();
             MappedByteBuffer bb = fc.map(FileChannel.MapMode.READ_ONLY, 0, sz);
@@ -74,12 +79,20 @@ public class MainActivity extends Activity {
             options.put("output", "json");
 
             TypedInput in = new TypedByteArray("audio/x-flac; rate=" + sampleRate, data2);
-
+            final long startTime = System.nanoTime();
             App.cesService.getUp(in, options, new Callback<Response>() {
                 @Override
                 public void success(Response response, retrofit.client.Response response2) {
                     DialogUtil.removeProgressDialog(pd);
                     txtView.setText(response.getFirstTranscription());
+                    long endTime = System.nanoTime();
+                    long duration = (endTime - startTime) / 1000000;
+                    saveResultOnFile(audioFile.getName(), audioFile.length() / 1024, response.getFirstTranscription(),
+                            response.getConfidence(), duration);
+                    current++;
+                    if (current < files.size()) {
+                        getTranscription(files.get(current));
+                    }
                 }
 
                 @Override
@@ -88,6 +101,17 @@ public class MainActivity extends Activity {
                     txtView.setText("ERRORE");
                 }
             });
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void saveResultOnFile(String name, long lenght, String transcription, double confidence, long responseTime) {
+        try {
+            FileOutputStream outputStream = new FileOutputStream(outputFile, true);
+            String line = String.format("%s\t%d\t%s\t%f\t%d\n", name, lenght, transcription, confidence, responseTime);
+            outputStream.write(line.getBytes());
+            outputStream.close();
         } catch (IOException e) {
             e.printStackTrace();
         }

@@ -1,38 +1,24 @@
 package me.pasqualinosorice.voicerecognitionfile.network;
 
-import com.google.gson.annotations.SerializedName;
-
-import java.util.ArrayList;
 import java.util.List;
 
 public class Response {
-    private List<Result> result = new ArrayList<>();
-    private Integer resultIndex;
-
-    public List<Result> getResult() {
-        return result;
-    }
-
-    public Integer getResultIndex() {
-        return resultIndex;
-    }
+    private List<Result> result;
 
     public String getFirstTranscription() {
         return result.get(0).getAlternative().get(0).getTranscript();
     }
+
+    public double getConfidence() {
+        return Double.parseDouble(result.get(0).getAlternative().get(0).getConfidence());
+    }
 }
 
 class Result {
-    private List<Alternative> alternative = new ArrayList<>();
-    @SerializedName("final")
-    private Boolean _final;
+    private List<Alternative> alternative;
 
     public List<Alternative> getAlternative() {
         return alternative;
-    }
-
-    public Boolean getFinal() {
-        return _final;
     }
 }
 
