@@ -9,7 +9,7 @@ public class RestClient {
 
     public RestClient() {
         RestAdapter restAdapter = new RestAdapter.Builder()
-                //.setLogLevel(RestAdapter.LogLevel.FULL)
+                .setLogLevel(RestAdapter.LogLevel.FULL)
                 .setEndpoint(BASE_URL)
                 .setConverter(new GoogleConverter())
                 .build();

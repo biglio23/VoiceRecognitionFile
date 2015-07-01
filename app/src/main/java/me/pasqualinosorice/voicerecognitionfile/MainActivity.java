@@ -98,7 +98,9 @@ public class MainActivity extends Activity {
                 @Override
                 public void failure(RetrofitError error) {
                     Log.d("LINO", "ERROR");
-                    txtView.setText("ERRORE");
+                    DialogUtil.removeProgressDialog(pd);
+                    txtView.setText(error.getMessage());
+                    getTranscription(files.get(current));
                 }
             });
         } catch (IOException e) {
@@ -121,12 +123,8 @@ public class MainActivity extends Activity {
         ArrayList<File> inFiles = new ArrayList<>();
         File[] files = parentDir.listFiles();
         for (File file : files) {
-            if (file.isDirectory()) {
-                inFiles.addAll(getListFiles(file));
-            } else {
-                if (file.getName().endsWith(".flac")) {
-                    inFiles.add(file);
-                }
+            if (file.getName().endsWith(".flac")) {
+                inFiles.add(file);
             }
         }
         return inFiles;

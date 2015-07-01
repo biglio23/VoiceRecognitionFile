@@ -10,7 +10,11 @@ public class Response {
     }
 
     public double getConfidence() {
-        return Double.parseDouble(result.get(0).getAlternative().get(0).getConfidence());
+        if (result.get(0).getAlternative().get(0).getConfidence() != null) {
+            return Double.parseDouble(result.get(0).getAlternative().get(0).getConfidence());
+        } else {
+            return 1;
+        }
     }
 }
 
